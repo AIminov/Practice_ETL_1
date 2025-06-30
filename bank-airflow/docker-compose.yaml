@@ -1,0 +1,45 @@
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.9.0-python3.11
+  env_file: .env
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: "uR7cKGrmY6xuNNnl_r7hDLhRgTIHm1KHKoJu4Rej7q0="
+    AIRFLOW__WEBSERVER__SECRET_KEY: "somethingelse"
+    _PIP_ADDITIONAL_REQUIREMENTS: pandas psycopg2-binary pyyaml python-dateutil
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./scripts:/opt/airflow/scripts
+    - ./data:/opt/airflow/data:ro
+    - ./config.yaml:/opt/airflow/config.yaml:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 10s
+      retries: 5
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+
+volumes:
+  pgdata:
+
