@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 """
-Robust ETL: loads the six legacy CSV files into the DS‑schema of PostgreSQL and
-logs every step.  Extra statistics recorded per file:
-  • rows_processed  – как и раньше
-  • rows_deduped    – сколько строк отброшено как дубликаты PK
-  • date_parse_err  – сколько значений дат не удалось распарсить
-Эти цифры пишутся в колонку `message` таблицы LOGS.etl_audit в формате
-"deduped=…, date_err=…".
+Задача - загрузить содержимое CSV файлов в БД.
 """
 from __future__ import annotations
 
