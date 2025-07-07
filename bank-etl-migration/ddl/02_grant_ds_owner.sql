@@ -1,14 +1,31 @@
-/* 1. разрешаем видеть объекты схемы DS */
-GRANT USAGE ON SCHEMA ds TO ds_owner;
+-- === 1. Доступ к схемам ===
+GRANT USAGE ON SCHEMA ds TO ds_owner, logs_owner;
+GRANT USAGE ON SCHEMA logs TO ds_owner, logs_owner;
 
-/* 2. полный доступ к таблицам, с которыми работает ETL */
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE ds.ft_balance_f        TO ds_owner;
-GRANT SELECT, INSERT, DELETE              ON TABLE ds.ft_posting_f   TO ds_owner;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE ds.md_account_d        TO ds_owner;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE ds.md_currency_d       TO ds_owner;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE ds.md_exchange_rate_d  TO ds_owner;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE ds.md_ledger_account_s TO ds_owner;
+-- === 2. Все права на все таблицы ===
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ds TO ds_owner, logs_owner;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA logs TO ds_owner, logs_owner;
 
-/* 3. если появятся новые таблицы в DS — выдаём права автоматически */
-ALTER DEFAULT PRIVILEGES FOR ROLE ds_owner IN SCHEMA ds
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ds_owner;
+-- === 3. Все права на все sequences ===
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA ds TO ds_owner, logs_owner;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA logs TO ds_owner, logs_owner;
+
+-- === 4. Все права на все функции (если есть, полезно для процедур) ===
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA ds TO ds_owner, logs_owner;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA logs TO ds_owner, logs_owner;
+
+-- === 5. Default-права на будущие объекты (если кто-то создаёт от postgres) ===
+ALTER DEFAULT PRIVILEGES IN SCHEMA ds
+  GRANT ALL PRIVILEGES ON TABLES TO ds_owner, logs_owner;
+ALTER DEFAULT PRIVILEGES IN SCHEMA logs
+  GRANT ALL PRIVILEGES ON TABLES TO ds_owner, logs_owner;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA ds
+  GRANT ALL PRIVILEGES ON SEQUENCES TO ds_owner, logs_owner;
+ALTER DEFAULT PRIVILEGES IN SCHEMA logs
+  GRANT ALL PRIVILEGES ON SEQUENCES TO ds_owner, logs_owner;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA ds
+  GRANT ALL PRIVILEGES ON FUNCTIONS TO ds_owner, logs_owner;
+ALTER DEFAULT PRIVILEGES IN SCHEMA logs
+  GRANT ALL PRIVILEGES ON FUNCTIONS TO ds_owner, logs_owner;
