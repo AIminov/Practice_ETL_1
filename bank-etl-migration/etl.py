@@ -79,11 +79,11 @@ def upsert(df: pd.DataFrame, table: str, pk: List[str] | None, conn):
 
     with conn.cursor() as cur:
         cur.execute(sql.SQL("CREATE TEMP TABLE {} (LIKE {})").format(stg, main))
-        with tempfile.NamedTemporaryFile('w+', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile('w+', delete=False, encoding='utf-8') as tmp:
             df.to_csv(tmp.name, index=False, header=False, quoting=csv.QUOTE_MINIMAL)
             tmp_path = tmp.name
             cols_ident = sql.SQL(',').join(map(sql.Identifier, df.columns))
-        with open(tmp_path) as f:
+        with open(tmp_path, encoding='utf-8') as f:
             cur.copy_expert(sql.SQL("COPY {} ({}) FROM STDIN WITH CSV").format(stg, cols_ident), f)
         os.remove(tmp_path)
 
@@ -113,11 +113,22 @@ def load(path: Path, conn):
 
     # --- parse dates & count errors ---
     date_errs = 0
+    critical_date_fields = {"on_date", "oper_date", "data_actual_date", "start_date"}  # Fields that should not be null
+    
     for col in DATE_COLS.get(path.name.lower(), []):
         if col in df.columns:
             parsed, errs = zip(*df[col].apply(parse_date_safe))
             df[col] = parsed
             date_errs += sum(errs)
+            
+            # Check for null values in critical date fields
+            if col in critical_date_fields:
+                null_count = df[col].isnull().sum()
+                if null_count > 0:
+                    logging.warning(f"Critical date field '{col}' has {null_count} null values after parsing in {path.name}")
+                    # Remove rows with null critical dates to prevent data integrity issues
+                    df = df.dropna(subset=[col])
+                    logging.info(f"Removed {null_count} rows with null {col} values from {path.name}")
 
     orig = len(df)
     if pk:

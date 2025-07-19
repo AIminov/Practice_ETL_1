@@ -110,11 +110,15 @@ def upsert(df: pd.DataFrame, table: str, pk: List[str] | None, conn):
             tmp_path = tmp.name
             cols_ident = sql.SQL(',').join(map(sql.Identifier, df.columns))
         
-        with open(tmp_path) as f:
-            cur.copy_expert(
-                sql.SQL("COPY {} ({}) FROM STDIN WITH CSV").format(stg, cols_ident), f
-            )
-        os.remove(tmp_path)  # Fixed: Removed erroneous (tmp_path) call
+        try:
+            with open(tmp_path, encoding='utf-8') as f:
+                cur.copy_expert(
+                    sql.SQL("COPY {} ({}) FROM STDIN WITH CSV").format(stg, cols_ident), f
+                )
+        finally:
+            # Ensure temporary file is always cleaned up
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
         if pk:
             cols = sql.SQL(',').join(map(sql.Identifier, df.columns))
